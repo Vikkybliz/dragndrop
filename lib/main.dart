@@ -1,3 +1,4 @@
+import 'package:dragndrop/model.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -10,103 +11,141 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: DragnDrop(),
+      home: GamePage(),
     );
   }
 }
 
-class DragnDrop extends StatefulWidget {
-  const DragnDrop({super.key});
+class GamePage extends StatefulWidget {
+  const GamePage({super.key});
 
   @override
-  State<DragnDrop> createState() => _DragnDropState();
+  State<GamePage> createState() => _GamePageState();
 }
 
-class _DragnDropState extends State<DragnDrop> {
-  final params = {'flutter': 'Dart', 'Bootstrap': 'CSS', 'Django': 'Python'};
-  bool isDropped = false;
-  final Map<String, bool> score = {};
+class _GamePageState extends State<GamePage> {
+  late List<LangFrame> list1;
+  late List<LangFrame> list2;
+  int score = 0;
+
+  initGame() {
+    list1 = [
+      LangFrame(
+        language: 'Dart',
+        framework: 'Flutter',
+      ),
+      LangFrame(
+        language: 'Python',
+        framework: 'Django',
+      ),
+      LangFrame(
+        language: 'JavaScript',
+        framework: 'React',
+      ),
+      LangFrame(
+        language: 'PHP',
+        framework: 'Laravel',
+      ),
+      LangFrame(
+        language: 'Java',
+        framework: 'Springboot',
+      )
+    ];
+    list2 = List.from(list1);
+    list1.shuffle();
+    list2.shuffle();
+  }
+
+  @override
+  void initState() {
+    initGame();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Hello'),
-        ),
-        body: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: params.keys
-                  .map((e) => Draggable(
-                      data: e,
-                      child: Cont(text: e, color: Colors.red, fontSize: 20),
-                      feedback: Cont(text: e, color: Colors.red, fontSize: 20)))
-                  .toList(),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: params.keys
-                  .map((e) => DragTarget(
-                        builder: (context, accepted, rejected) {
-                          if (e == params[e]) {
-                            return Cont(
-                                text: 'Correct',
-                                color: Colors.red,
-                                fontSize: 20);
-                          } else {
-                            return Cont(
-                                text: params[e]!,
-                                color: Colors.red,
-                                fontSize: 20);
-                          }
-                        },
-                        onWillAccept: (data) {
-                          return data == e;
-                        },
-                        onAccept: (data) {
-                          setState(() {
-                            score[e] == true;
-                          });
-                        },
-                        onLeave: (data) {
-                          print(data);
-                          print(e);
-                        },
-                      ))
-                  .toList(),
-            )
-          ],
-        ));
-  }
-}
-
-class Cont extends StatelessWidget {
-  String text;
-  Color color;
-  double fontSize;
-  Cont(
-      {super.key,
-      required this.text,
-      required this.color,
-      required this.fontSize});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      child: SizedBox(
-        height: 100,
-        width: 100,
-        child: Center(
-          child: Text(
-            text,
-            style: TextStyle(color: color, fontSize: fontSize),
+      appBar: AppBar(
+        title: Text('Drag and Drop Game, Score = $score'),
+      ),
+      body: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            // crossAxisAlignment: CrossAxis,
+            children: [
+              Column(
+                children: list1
+                    .map((item) => Container(
+                          margin: const EdgeInsets.all(10),
+                          child: Draggable(
+                              data: item,
+                              feedback: Material(
+                                  child: _buildContainer(
+                                      item.framework, Colors.blueGrey)),
+                              child:
+                                  _buildContainer(item.framework, Colors.blue)),
+                        ))
+                    .toList(),
+              ),
+              // Spacer(),
+              Column(
+                children: list2
+                    .map((item2) => Container(
+                          margin: const EdgeInsets.all(10),
+                          child: DragTarget<LangFrame>(
+                            onWillAccept: (data) => true,
+                            onAccept: (data) {
+                              if (item2.language == data.language) {
+                                setState(() {
+                                  list1.remove(data);
+                                  list2.remove(item2);
+                                  score += 10;
+                                });
+                              } else {
+                                setState(() {
+                                  score -= 5;
+                                });
+                              }
+                            },
+                            builder: (BuildContext context,
+                                List<Object?> candidateData,
+                                List<dynamic> rejectedData) {
+                              return _buildContainer(
+                                  item2.language, Colors.red);
+                            },
+                          ),
+                        ))
+                    .toList(),
+              )
+            ],
           ),
-        ),
+          Center(
+            child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    initGame();
+                    score = 0;
+                  });
+                },
+                child: const Text('Restart Game')),
+          )
+        ],
       ),
     );
   }
+}
+
+Widget _buildContainer(text, color) {
+  return Container(
+    width: 100,
+    height: 60,
+    color: color,
+    child: Center(
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 18),
+      ),
+    ),
+  );
 }
